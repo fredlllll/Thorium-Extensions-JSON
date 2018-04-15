@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
-using Thorium_Reflection;
+using Thorium.Reflection;
 
-public static class Thorium_Extensions_JSON_CLASS
+public static class Thorium_Extensions_JSON
 {
     public static T Get<T>(this JObject jobj, string key, T def = default(T))
     {
