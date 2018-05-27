@@ -15,34 +15,46 @@ public static class Thorium_Extensions_JSON
         return def;
     }
 
-    public static object ConvertTo<T>(this T token, Type u) where T : JToken
+    /// <summary>
+    /// non generic version of https://github.com/JamesNK/Newtonsoft.Json/blob/master/Src/Newtonsoft.Json/Linq/Extensions.cs#L255
+    /// also renamed it to Value as it makes more sense
+    /// 
+    /// only works for primitive types
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="outputType"></param>
+    /// <returns></returns>
+    public static object Value(this JToken token, Type outputType)
     {
         if(token == null)
         {
-            return ReflectionHelper.GetDefault(u);
+            return ReflectionHelper.GetDefault(outputType);
         }
-        if(u.IsAssignableFrom(token.GetType()) && u != typeof(IComparable) && u != typeof(IFormattable))
+        if(outputType.IsAssignableFrom(token.GetType())
+            // don't want to cast JValue to its interfaces, want to get the internal value
+            && outputType != typeof(IComparable) && outputType != typeof(IFormattable))
         {
+            // HACK
             return token;
         }
         JValue jValue = token as JValue;
         if(jValue == null)
         {
-            throw new InvalidCastException(String.Format(CultureInfo.InvariantCulture, "Cannot cast {0} to {1}.", token.GetType(), typeof(T)));
+            throw new InvalidCastException(String.Format(CultureInfo.InvariantCulture, "Cannot cast {0} to {1}.", token.GetType(), outputType));
         }
-        if(u.IsAssignableFrom(jValue.Value.GetType()))
+        if(outputType.IsAssignableFrom(jValue.Value.GetType()))
         {
             return jValue.Value;
         }
-        if(ReflectionHelper.IsNullableType(u))
+        if(ReflectionHelper.IsNullableType(outputType))
         {
             if(jValue.Value == null)
             {
-                return ReflectionHelper.GetDefault(u);
+                return ReflectionHelper.GetDefault(outputType);
             }
-            u = Nullable.GetUnderlyingType(u);
+            outputType = Nullable.GetUnderlyingType(outputType);
         }
-        return System.Convert.ChangeType(jValue.Value, u, CultureInfo.InvariantCulture);
+        return Convert.ChangeType(jValue.Value, outputType, CultureInfo.InvariantCulture);
     }
 
     public static object Get(this JObject jobj, Type t, string key, object def = null)
@@ -51,7 +63,7 @@ public static class Thorium_Extensions_JSON
 
         if(token != null && !token.IsNull())
         {
-            return token.ConvertTo(t);
+            return token.Value(t);
         }
         return def;
     }
